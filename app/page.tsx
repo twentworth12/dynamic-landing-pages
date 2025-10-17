@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { extractUTMParams, hasUTMParams, formatUTMDescription, UTMParams } from '@/lib/utm';
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const [headline, setHeadline] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -19,6 +19,7 @@ export default function Home() {
     if (hasUTMParams(params)) {
       fetchPersonalizedMessage(params);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const parseMessage = (message: string) => {
@@ -27,7 +28,8 @@ export default function Home() {
 
     // Try to extract headline and description
     const headlineMatch = cleanMessage.match(/Headline:\s*(.+?)(?:\n|Description:|$)/i);
-    const descriptionMatch = cleanMessage.match(/Description:\s*(.+?)$/is);
+    // Use [\s\S] instead of 's' flag for compatibility
+    const descriptionMatch = cleanMessage.match(/Description:\s*([\s\S]+?)$/i);
 
     if (headlineMatch && descriptionMatch) {
       return {
@@ -213,5 +215,20 @@ export default function Home() {
           )}
       </main>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="font-sans min-h-screen bg-[#F8F5F0] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F25533]"></div>
+          <p className="mt-4 text-[#656567]">Loading...</p>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
