@@ -2,9 +2,12 @@ import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
 import { UTMParams } from '@/lib/utm';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy-load OpenAI client to avoid build-time initialization
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 // Simple in-memory cache
 const cache = new Map<string, { message: string; timestamp: number }>();
@@ -93,6 +96,7 @@ export async function POST(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
+          const openai = getOpenAIClient();
           const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
